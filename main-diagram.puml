@@ -1,0 +1,49 @@
+@startuml
+' ========================
+' +-----------------+---------------------------------------------------------------+
+' | 限界上下文	    | 核心职责                                                       |
+' +-----------------+---------------------------------------------------------------+
+' | 人员管理上下文	| 用户注册、资质审核、角色分配（社区人员/服务组成员）                   |
+' +-----------------+---------------------------------------------------------------+
+' | 项目管理上下文	| 项目发布（Freelance/外包/内生/Startup）、项目审核、项目生命周期管理   |
+' +-----------------+---------------------------------------------------------------+
+' | 团队协作上下文	| 团队动态组建、成员加入/退出、与项目的绑定关系                        |
+' +-----------------+---------------------------------------------------------------+
+' | 内容管理上下文	| 文档/博客的发布、SEO 优化、知识沉淀                                |
+' +-----------------+---------------------------------------------------------------+
+' | 审核治理上下文	| 跨上下文的审核逻辑（资质审核/项目审核/服务组成员审核）                 |
+' +-----------------+---------------------------------------------------------------+
+' ========================
+
+
+' ========================
+' 全局配置
+' ========================
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+hide empty members
+
+
+!define DDD_AGGREGATE_ROOT <<(A,#ADD8E6) AggregateRoot>>
+!define DDD_ENTITY <<(E,#90EE90) Entity>>
+!define DDD_VALUE_OBJECT <<(V,#DDA0DD) Value Object>>
+!define DDD_DOMAIN_SERVICE <<(S,#FFA07A) DomainService>>
+
+' ========================
+' 引入子模块
+' ========================
+!include ./domains/user-context.puml
+!include ./domains/project-context.puml
+!include ./domains/audit-context.puml
+!include ./domains/team-context.puml
+!include ./domains/content-context.puml
+
+
+
+UC -[hidden]down-> "Audit Governance"
+"Project Management" -[hidden]down-> "Audit Governance"
+"Project Management" -[hidden]left-> UC
+"Team Collaboration" -[hidden]up-> "Audit Governance"
+"Content Management" -[hidden]up-> "Audit Governance"
+@enduml

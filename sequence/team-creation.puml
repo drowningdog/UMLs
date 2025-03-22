@@ -1,0 +1,22 @@
+@startuml
+' ========================
+' 团队创建时序图
+' ========================
+autonumber
+actor User as User
+participant "Application Service" as App
+participant "Team Aggregate" as Team
+participant "Project Aggregate" as Project
+participant "User Aggregate" as UserModule
+participant "AuditService" as Audit
+
+User -> App: Request Team Creation(projectId)
+App -> Project: Query Project Status(projectId)
+Project --> App: Return "Approved"
+App -> UserModule: Verify User Qualification(userId)
+UserModule --> App: Return "Qualification Valid"
+App -> Team: create(projectId, userId)
+Team -> Audit: Log Team Creation Event()
+Audit --> Team: Confirm
+App --> User: Return Team ID
+@enduml

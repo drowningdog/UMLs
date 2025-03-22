@@ -1,0 +1,24 @@
+' ========================
+' 团队协作上下文
+' ========================
+package "Team Collaboration" {
+  class Team <<AggregateRoot>> {
+    - teamId: String
+    - projectId: ProjectId
+    - members: Map<UserId, TeamRole>
+    + addMember(user: UserId, role: TeamRoleType)
+    + removeMember(user: UserId)
+    + notifyOwner(user: UserId)
+    + dismiss()
+  }
+
+  enum TeamRoleType {
+    OWNER
+    MEMBER
+  }
+
+  ' ----- Relationships -----
+  Team "1" --> "1" Project : bound to >
+  Team "1" --> "0..*" User : contains >
+  Project "1" ..> "1" Team : requires, creates, dismissed by >
+}

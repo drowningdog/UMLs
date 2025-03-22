@@ -1,0 +1,57 @@
+' ========================
+' 审核治理上下文
+' ========================
+package "Audit Governance" {
+    class AuditRecord DDD_ENTITY {
+      - recordId: String
+      - finalResult: AuditResult
+      - comment: String
+      - approvalChain: List<ApprovalChain>
+      + addComment()
+    }
+
+    entity AuditPolicy <<AggregatorRoot>> {
+      - policyId: String
+      - targetType: AuditType
+      - isActive: boolean
+      + executeAudit(target)
+    }
+
+    class ApprovalChain <<ValueObject>> {
+        - approvalRoles: String
+        - auditor: String
+        - auditType: AuditType
+        - nextAssignTo: UserId
+        - comment: String
+    }
+
+    enum AuditResult {
+        APPROVED
+        REJECTED
+        PENDING
+    }
+
+    enum AuditType {
+        MANUAL
+        AUTOMATIC
+    }
+
+    class AutomatedQuestionnaire <<Entity>> {
+      - questionnaireId: string
+      - questions: List<Question>
+      - passingScore: Int
+    }
+
+    ' 聚合关系
+    AuditPolicy --> ApprovalChain
+    AuditPolicy --> AutomatedQuestionnaire
+    AuditPolicy --> AuditRecord
+
+    AutomatedQuestionnaire ..> ApprovalChain : can be auditor >
+    ServiceGroupMember ..> ApprovalChain : can be auditor >
+
+    Qualification ..> AuditPolicy
+    Project "1" --> "1" AuditPolicy : requires >
+
+}
+

@@ -1,0 +1,23 @@
+' ========================
+' 内容管理上下文
+' ========================
+package "Content Management" {
+  class Content DDD_AGGREGATE_ROOT {
+    - contentId: String
+    - type: ContentType
+    - author: UserId
+    - createTime: DateTime
+    - updateTime: DateTime
+    - content: clob
+    + publish()
+    + delete()
+    + update()
+  }
+
+  enum ContentType {
+    TECH_DOC
+    LEGAL_DOC
+    BLOG
+    PROJECT_REPORT
+  }
+}
