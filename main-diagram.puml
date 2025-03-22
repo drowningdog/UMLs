@@ -43,7 +43,7 @@ hide empty members
 
 UC -[hidden]down-> "Audit Governance"
 "Project Management" -[hidden]down-> "Audit Governance"
-"Project Management" -[hidden]left-> UC
+"Project Management" -[hidden]down-> UC
 "Team Collaboration" -[hidden]up-> "Audit Governance"
 "Content Management" -[hidden]up-> "Audit Governance"
 @enduml
