@@ -2,26 +2,41 @@
 ' 审核治理上下文
 ' ========================
 package "Audit Governance" {
-    class AuditRecord DDD_ENTITY {
+    class AuditRecord <<Entity>> {
       - recordId: String
+      - targetId: String
+      - targetType: AuditTarget
+      - creationDate: DateTime
+      - lastUpdateDate: DateTime
       - finalResult: AuditResult
       - comment: String
-      - approvalChain: List<ApprovalChain>
-      + addComment()
+      - approvalChain: List<ApprovalStep>
+      + addComment(comment: String, auditor: UserId)
+      + approve(auditor: UserId)
+      + reject(auditor: UserId, reason: String)
+      + assignNextAuditor(auditor: UserId)
     }
 
-    entity AuditPolicy <<AggregatorRoot>> {
+    class AuditPolicy <<AggregateRoot>> {
       - policyId: String
-      - targetType: AuditType
+      - name: String
+      - description: String
+      - targetType: AuditTarget
+      - requiredApprovals: Int
       - isActive: boolean
-      + executeAudit(target)
+      - workflow: AuditWorkflow
+      + executeAudit(targetId: String): AuditRecord
+      + activatePolicy()
+      + deactivatePolicy()
+      + updateWorkflow(workflow: AuditWorkflow)
     }
 
-    class ApprovalChain <<ValueObject>> {
-        - approvalRoles: String
-        - auditor: String
-        - auditType: AuditType
-        - nextAssignTo: UserId
+    class ApprovalStep <<ValueObject>> {
+        - stepOrder: Int
+        - approvalRole: ServiceGroupRoleType
+        - auditor: UserId
+        - auditResult: AuditResult
+        - auditDate: DateTime
         - comment: String
     }
 
@@ -31,27 +46,53 @@ package "Audit Governance" {
         PENDING
     }
 
-    enum AuditType {
-        MANUAL
-        AUTOMATIC
+    enum AuditTarget {
+        USER_QUALIFICATION
+        PROJECT
+        SERVICE_MEMBER
+    }
+
+    class AuditWorkflow <<Entity>> {
+      - workflowId: String
+      - steps: List<AuditWorkflowStep>
+      - questionnaire: AutomatedQuestionnaire
+      + addStep(role: ServiceGroupRoleType, order: Int)
+      + removeStep(order: Int)
+      + getNextApprover(currentStep: Int): ServiceGroupRoleType
+    }
+
+    class AuditWorkflowStep <<ValueObject>> {
+      - order: Int
+      - approverRole: ServiceGroupRoleType
+      - isAutomatic: Boolean
     }
 
     class AutomatedQuestionnaire <<Entity>> {
-      - questionnaireId: string
+      - questionnaireId: String
+      - targetType: AuditTarget
       - questions: List<Question>
       - passingScore: Int
+      + evaluate(answers: Map<String, String>): Int
     }
 
-    ' 聚合关系
-    AuditPolicy --> ApprovalChain
-    AuditPolicy --> AutomatedQuestionnaire
-    AuditPolicy --> AuditRecord
+    class Question <<ValueObject>> {
+      - questionId: String
+      - content: String
+      - weight: Int
+      - expectedAnswer: String
+      + validate(answer: String): Boolean
+    }
 
-    AutomatedQuestionnaire ..> ApprovalChain : can be auditor >
-    ServiceGroupMember ..> ApprovalChain : can be auditor >
-
-    Qualification ..> AuditPolicy
-    Project "1" --> "1" AuditPolicy : requires >
-
+    ' ----- Relationships -----
+    AuditPolicy "1" *-- "1" AuditWorkflow : defines >
+    AuditPolicy "1" --> "0..*" AuditRecord : creates >
+    AuditWorkflow "1" *-- "0..*" AuditWorkflowStep : contains >
+    AuditWorkflow "1" --> "0..1" AutomatedQuestionnaire : may include >
+    AutomatedQuestionnaire "1" *-- "1..*" Question : consists of >
+    AuditRecord "1" *-- "1..*" ApprovalStep : tracks >
+    
+    User "1" --> "0..*" AuditRecord : subject to > 
+    Project "1" --> "0..*" AuditRecord : subject to >
+    ServiceGroupMember "1" --> "0..*" AuditRecord : performs >
 }
 

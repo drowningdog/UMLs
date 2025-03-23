@@ -39,8 +39,31 @@ hide empty members
 !include ./domains/team-context.puml
 !include ./domains/content-context.puml
 
+' ========================
+' 跨上下文关系
+' ========================
+' 用户与项目关系
+User "1" --> "0..*" Project : creates >
+User "1" --> "0..*" Project : participates in >
 
+' 用户与内容关系
+User "1" --> "0..*" Content : authors >
 
+' 项目与团队关系
+Project "1" --> "1" Team : has >
+
+' 项目与内容关系 
+Project "1" --> "0..*" Content : documented by >
+
+' 审核与其他上下文的关系
+AuditPolicy "1" --> "0..*" User : governs >
+AuditPolicy "1" --> "0..*" Project : governs >
+AuditPolicy "1" --> "0..*" ServiceGroupMember : governs >
+
+' 服务组成员与项目关系
+ServiceGroupMember "1" --> "0..*" Project : approves >
+
+' 原有的隐藏关系
 UC -[hidden]down-> "Audit Governance"
 "Project Management" -[hidden]down-> "Audit Governance"
 "Project Management" -[hidden]down-> UC

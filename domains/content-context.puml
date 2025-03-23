@@ -2,7 +2,7 @@
 ' 内容管理上下文
 ' ========================
 package "Content Management" {
-  class Content DDD_AGGREGATE_ROOT {
+  class Content <<AggregateRoot>> {
     - contentId: String
     - type: ContentType
     - author: UserId

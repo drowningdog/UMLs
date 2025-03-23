@@ -5,11 +5,25 @@ package "Team Collaboration" {
   class Team <<AggregateRoot>> {
     - teamId: String
     - projectId: ProjectId
+    - name: String
+    - description: String
+    - creationDate: DateTime
+    - status: TeamStatus
+    - owner: UserId
     - members: Map<UserId, TeamRole>
     + addMember(user: UserId, role: TeamRoleType)
     + removeMember(user: UserId)
+    + transferOwnership(newOwner: UserId)
     + notifyOwner(user: UserId)
     + dismiss()
+  }
+
+  class TeamRole <<ValueObject>> {
+    - userId: UserId
+    - roleType: TeamRoleType
+    - joinDate: DateTime
+    - permissions: Set<TeamPermission>
+    + hasPermission(permission: TeamPermission): boolean
   }
 
   enum TeamRoleType {
@@ -17,8 +31,26 @@ package "Team Collaboration" {
     MEMBER
   }
 
+  enum TeamStatus {
+    FORMING
+    ACTIVE
+    SUSPENDED
+    DISMISSED
+  }
+
+  enum TeamPermission {
+    INVITE_MEMBERS
+    REMOVE_MEMBERS
+    EDIT_TEAM_INFO
+    VIEW_PROJECT_DETAILS
+    MANAGE_TASKS
+  }
+
   ' ----- Relationships -----
   Team "1" --> "1" Project : bound to >
-  Team "1" --> "0..*" User : contains >
+  Team "1" --> "1..*" User : contains >
+  Team "1" *-- "1..*" TeamRole : defines >
+  User "1" ..> "0..*" Team : joins >
+  User "1" --> "0..*" Team : owns >
   Project "1" ..> "1" Team : requires, creates, dismissed by >
 }
