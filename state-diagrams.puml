@@ -71,6 +71,12 @@ state "项目管理状态" as project_container {
     project_completed --> project_archived : 项目总结/资源归档
     project_aborted --> project_archived : 经验总结/资料归档
     project_archived --> [*]
+    
+    note right of project_in_progress
+      <b>可见性规则</b>:
+      只有处于"进行中"状态的项目才会公开可见，
+      其他状态的项目仅对项目成员和管理员可见
+    end note
 }
 
 ' ========================
