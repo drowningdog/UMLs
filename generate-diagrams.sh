@@ -72,13 +72,49 @@ else
     echo -e "${RED}生成审计治理上下文图失败${RESET}"
 fi
 
-# 生成状态图集合
-echo -e "${YELLOW}生成状态图集合...${RESET}"
-java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/state-diagrams.puml" -o "$OUTPUTS_DIR/state"
+# 生成用户状态图
+echo -e "${YELLOW}生成用户状态图...${RESET}"
+java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/user-state.puml" -o "$OUTPUTS_DIR/state"
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}成功生成状态图集合${RESET}"
+    echo -e "${GREEN}成功生成用户状态图${RESET}"
 else
-    echo -e "${RED}生成状态图集合失败${RESET}"
+    echo -e "${RED}生成用户状态图失败${RESET}"
+fi
+
+# 生成项目状态图
+echo -e "${YELLOW}生成项目状态图...${RESET}"
+java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/project-state.puml" -o "$OUTPUTS_DIR/state"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}成功生成项目状态图${RESET}"
+else
+    echo -e "${RED}生成项目状态图失败${RESET}"
+fi
+
+# 生成团队状态图
+echo -e "${YELLOW}生成团队状态图...${RESET}"
+java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/team-state.puml" -o "$OUTPUTS_DIR/state"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}成功生成团队状态图${RESET}"
+else
+    echo -e "${RED}生成团队状态图失败${RESET}"
+fi
+
+# 生成内容状态图
+echo -e "${YELLOW}生成内容状态图...${RESET}"
+java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/content-state.puml" -o "$OUTPUTS_DIR/state"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}成功生成内容状态图${RESET}"
+else
+    echo -e "${RED}生成内容状态图失败${RESET}"
+fi
+
+# 生成审核状态图
+echo -e "${YELLOW}生成审核状态图...${RESET}"
+java -jar "$PLANTUML_JAR" -charset UTF-8 "$SRC_DIR/state/audit-state.puml" -o "$OUTPUTS_DIR/state"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}成功生成审核状态图${RESET}"
+else
+    echo -e "${RED}生成审核状态图失败${RESET}"
 fi
 
 # 生成用户管理流程图

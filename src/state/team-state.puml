@@ -1,0 +1,28 @@
+@startuml team-state
+' ========================
+' 团队状态图
+' ========================
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam packageTitleAlignment center
+skinparam backgroundColor white
+skinparam shadowing false
+hide empty description
+
+title 团队生命周期状态转换图
+
+state "团队生命周期状态" as team_container {
+    state "组建中 (Forming)" as team_forming
+    state "活跃 (Active)" as team_active
+    state "冻结 (Frozen)" as team_frozen
+    state "已解散 (Disbanded)" as team_disbanded
+    
+    [*] --> team_forming
+    team_forming --> team_active : 成员≥3人
+    team_active --> team_frozen : 项目终止/重大违规
+    team_frozen --> team_active : 服务组解冻
+    team_frozen --> team_disbanded : 存档期满(90天)
+    team_disbanded --> [*]
+}
+
+@enduml 

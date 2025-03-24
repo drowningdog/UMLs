@@ -1,0 +1,28 @@
+@startuml audit-state
+' ========================
+' 审核状态图
+' ========================
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam packageTitleAlignment center
+skinparam backgroundColor white
+skinparam shadowing false
+hide empty description
+
+title 审核流程状态转换图
+
+state "审核流程状态" as audit_container {
+    state "已创建 (Created)" as audit_created
+    state "进行中 (In Progress)" as audit_in_progress
+    state "需更多信息 (Need Info)" as audit_need_info
+    state "已完成 (Completed)" as audit_completed
+    
+    [*] --> audit_created
+    audit_created --> audit_in_progress : 分配审核人员
+    audit_in_progress --> audit_need_info : 信息不足
+    audit_need_info --> audit_in_progress : 信息补充完成
+    audit_in_progress --> audit_completed : 审核决定
+    audit_completed --> [*]
+}
+
+@enduml 

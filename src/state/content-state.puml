@@ -1,0 +1,27 @@
+@startuml content-state
+' ========================
+' 内容状态图
+' ========================
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam packageTitleAlignment center
+skinparam backgroundColor white
+skinparam shadowing false
+hide empty description
+
+title 文章内容状态转换图
+
+state "文章状态" as article_container {
+    state "草稿 (Draft)" as article_draft
+    state "已发布 (Published)" as article_published
+    state "已归档 (Archived)" as article_archived
+    
+    [*] --> article_draft
+    article_draft --> article_published : 管理员发布
+    article_published --> article_draft : 暂时下线
+    article_published --> article_archived : 过期/不再相关
+    article_archived --> article_published : 重新发布
+    article_archived --> [*]
+}
+
+@enduml 

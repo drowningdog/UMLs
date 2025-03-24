@@ -1,0 +1,43 @@
+@startuml user-state
+' ========================
+' 用户状态图
+' ========================
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam packageTitleAlignment center
+skinparam backgroundColor white
+skinparam shadowing false
+hide empty description
+
+title 用户账号状态转换图
+
+state "用户账号状态" as user_container {
+    state "未验证 (Unverified)" as user_unverified
+    state "待审核 (Pending Review)" as user_pending_review
+    state "活跃 (Active)" as user_active
+    state "锁定 (Locked)" as user_locked
+    state "受限 (Restricted)" as user_restricted
+    state "失活 (Inactive)" as user_inactive
+    state "封禁 (Banned)" as user_banned
+    state "注销 (Deleted)" as user_deleted
+    
+    [*] --> user_unverified
+    user_unverified --> user_pending_review : 需人工审核资质
+    user_unverified --> user_active : 邮箱/手机验证
+    user_pending_review --> user_active : 审核通过
+    user_pending_review --> user_unverified : 资质不符/需重新提交
+    user_active --> user_locked : 异常登录/密码错误次数过多
+    user_active --> user_restricted : 轻微违规/被举报
+    user_locked --> user_active : 安全验证/管理员解锁
+    user_restricted --> user_active : 限制期满/申诉成功
+    user_restricted --> user_banned : 再次违规/申诉失败
+    user_active --> user_inactive : 长期不活跃/用户请求
+    user_inactive --> user_active : 用户重新登录
+    user_active --> user_banned : 严重违规/管理员操作
+    user_active --> user_deleted : 用户申请注销
+    user_inactive --> user_deleted : 超过保留期限
+    user_banned --> user_deleted : 申请数据删除
+    user_deleted --> [*]
+}
+
+@enduml 
