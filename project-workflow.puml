@@ -1,0 +1,81 @@
+@startuml project-workflow
+' ========================
+' 项目管理领域流程图
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam activityFontSize 12
+skinparam activityBorderColor #888888
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+title 项目管理领域流程图
+
+' ========================
+' 项目管理领域流程
+' ========================
+start
+
+:创建项目草案;
+note right: 项目基础信息+标签
+
+:编辑项目详细信息;
+
+:提交项目审核;
+note right: 此阶段项目仅对项目成员可见
+
+if (项目审核通过?) then (是)
+    :设置里程碑和任务;
+    
+    :组建项目团队;
+    note right: 关联到团队协作领域
+    
+    :启动项目;
+    note right: 项目状态变为"进行中"\n此阶段项目变为公开可见
+    
+    fork
+        :团队成员执行任务;
+    fork again
+        :项目监控与调整;
+    end fork
+    
+    if (项目遇到问题?) then (是)
+        :项目暂停;
+        note right: 暂停期间项目不再公开可见
+        
+        if (问题解决?) then (是)
+            :重新启动项目;
+        else (否)
+            :终止项目;
+            :项目经验总结;
+            :项目归档;
+        endif
+    else (否)
+        :继续执行项目;
+        
+        if (里程碑全部完成?) then (是)
+            :标记项目为已完成;
+            note right: 项目完成后不再公开可见
+            
+            :项目总结与评估;
+            :项目归档;
+        endif
+    endif
+else (否)
+    :返回修改项目计划;
+    if (放弃项目?) then (是)
+        :终止项目;
+    else (否)
+        :重新提交审核;
+    endif
+endif
+
+stop
+
+@enduml 

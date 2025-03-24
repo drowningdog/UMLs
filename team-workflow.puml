@@ -1,0 +1,94 @@
+@startuml team-workflow
+' ========================
+' 团队协作领域流程图
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam activityFontSize 12
+skinparam activityBorderColor #888888
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+title 团队协作领域流程图
+
+' ========================
+' 团队协作领域流程
+' ========================
+start
+
+:项目Owner启动团队组建;
+note right: 关联到项目管理领域
+
+:创建团队基本资料;
+:设置团队角色需求;
+
+fork
+    :发布团队招募公告;
+    
+    while (收到加入申请?) is (是)
+        :查看申请者资料;
+        if (符合团队需求?) then (是)
+            :批准申请;
+            :新成员加入团队;
+        else (否)
+            :拒绝申请;
+        endif
+    endwhile
+fork again
+    :主动邀请成员;
+    
+    while (邀请待回应?) is (是)
+        if (接受邀请?) then (是)
+            :新成员加入团队;
+        else (否)
+            :邀请失效;
+        endif
+    endwhile
+end fork
+
+if (团队人数>=3?) then (是)
+    :团队状态变为活跃;
+    :团队开始协作;
+    
+    fork
+        :团队内部沟通;
+    fork again
+        :协作处理项目任务;
+    fork again
+        :定期团队会议;
+    end fork
+    
+    if (项目终止或重大违规?) then (是)
+        :团队冻结;
+        
+        if (可以解冻?) then (是)
+            :团队恢复活跃;
+        else (否)
+            :等待存档期满;
+            :团队解散;
+        endif
+    endif
+    
+    if (项目完成?) then (是)
+        :团队工作评估;
+        :决定是否解散团队;
+        
+        if (解散团队?) then (是)
+            :团队解散;
+        else (否)
+            :团队转入新项目;
+        endif
+    endif
+else (否)
+    :继续招募团队成员;
+endif
+
+stop
+
+@enduml 

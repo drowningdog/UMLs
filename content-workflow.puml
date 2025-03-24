@@ -1,0 +1,66 @@
+@startuml content-workflow
+' ========================
+' 内容管理领域流程图
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam activityFontSize 12
+skinparam activityBorderColor #888888
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+title 内容管理领域流程图
+
+' ========================
+' 内容管理领域流程
+' ========================
+start
+
+:创建内容草稿;
+note right: 文章、案例、知识库等
+
+:编辑内容;
+
+fork
+    :设置SEO元数据;
+fork again
+    :选择分类与标签;
+fork again
+    :上传附件或媒体;
+end fork
+
+:内容审查;
+
+if (内容符合标准?) then (是)
+    :发布内容;
+    note right: 内容变为公开可见
+    
+    if (需要更新?) then (是)
+        :内容临时下线;
+        :更新内容;
+        :重新发布;
+    else (否)
+        if (内容过期或不再相关?) then (是)
+            :归档内容;
+            note right: 内容不再公开显示，但仍可访问
+            
+            if (需要重新发布?) then (是)
+                :更新内容;
+                :重新发布;
+            endif
+        endif
+    endif
+else (否)
+    :退回修改;
+    :重新编辑内容;
+endif
+
+stop
+
+@enduml 

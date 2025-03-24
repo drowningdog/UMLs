@@ -1,0 +1,91 @@
+@startuml user-workflow
+' ========================
+' 用户管理领域流程图
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam activityFontSize 12
+skinparam activityBorderColor #888888
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+title 用户管理领域流程图
+
+' ========================
+' 用户管理领域流程
+' ========================
+start
+
+:用户注册;
+
+if (需要人工审核?) then (是)
+    :提交资质证明;
+    :等待审核;
+    if (审核通过?) then (是)
+        :账号激活;
+    else (否)
+        :返回重新提交;
+        note right: 可能重新提交或放弃
+    endif
+else (否)
+    :邮箱/手机验证;
+    :账号激活;
+endif
+
+:完善个人资料;
+
+fork
+    :关联专业资质;
+fork again
+    :添加技能标签;
+fork again
+    :上传头像;
+end fork
+
+:进入平台主页;
+
+#lightgreen:正常使用系统;
+
+if (出现异常行为?) then (是)
+    #pink:账号受限/封禁;
+    note right: 根据违规程度决定是受限还是封禁
+    
+    if (申诉成功?) then (是)
+        #lightgreen:恢复正常使用;
+    else (否)
+        if (严重违规?) then (是)
+            :永久封禁;
+        else (否)
+            :临时受限;
+            :限制期满;
+            #lightgreen:恢复正常使用;
+        endif
+    endif
+else (否)
+    if (长期不活跃?) then (是)
+        :账号标记为不活跃;
+        if (再次登录?) then (是)
+            #lightgreen:恢复活跃状态;
+        else (否)
+            if (超过保留期?) then (是)
+                :账号自动注销;
+            endif
+        endif
+    endif
+endif
+
+if (用户申请注销?) then (是)
+    :确认注销请求;
+    :数据匿名化处理;
+    :完成账号注销;
+endif
+
+stop
+
+@enduml 

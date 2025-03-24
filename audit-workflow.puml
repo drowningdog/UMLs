@@ -1,0 +1,77 @@
+@startuml audit-workflow
+' ========================
+' 审核治理领域流程图
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam activityFontSize 12
+skinparam activityBorderColor #888888
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+title 审核治理领域流程图
+
+' ========================
+' 审核治理领域流程
+' ========================
+start
+
+if (审核类型?) then (用户资质审核)
+    :接收用户资质证明;
+else if (项目审核) then
+    :接收项目审核请求;
+else (服务组成员审核)
+    :接收服务组申请;
+endif
+
+:创建审核记录;
+:分配审核人员;
+
+:审核流程启动;
+
+if (自动初步筛查?) then (是)
+    :执行自动化合规检查;
+    
+    if (自动检查通过?) then (是)
+        :进入人工审核;
+    else (否)
+        :直接拒绝;
+        :记录拒绝原因;
+        :通知申请人;
+        stop
+    endif
+else (否)
+    :进入人工审核;
+endif
+
+:审核人员查看资料;
+
+if (资料完整?) then (是)
+    :评估是否符合标准;
+else (否)
+    :请求补充信息;
+    :等待信息补充;
+    :接收补充材料;
+    :重新审核;
+endif
+
+if (符合审核标准?) then (是)
+    :批准申请;
+else (否)
+    :拒绝申请;
+    :记录拒绝原因;
+endif
+
+:完成审核流程;
+:通知申请人结果;
+:更新相关记录;
+
+stop
+
+@enduml 
