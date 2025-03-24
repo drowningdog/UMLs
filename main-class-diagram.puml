@@ -29,7 +29,7 @@ hide circle
 !define Entity <<(E,#90EE90) Entity>>
 !define ValueObject <<(V,#DDA0DD) ValueObject>>
 !define DomainService <<(S,#FFA07A) DomainService>>
-!define DDD_ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+!define ACL <<(L,#FFFF99) AntiCorruptionLayer>>
 
 ' ========================
 ' 限界上下文定义
@@ -123,26 +123,26 @@ package "审核治理上下文 (Audit Governance)" as AG {
 ' 定义反腐层
 ' ========================
 together {
-  class UserAuditACL DDD_ACL {
+  class UserAuditACL ACL {
     + 用户资质审核流程
   }
 
-  class ProjectAuditACL DDD_ACL {
+  class ProjectAuditACL ACL {
     + 项目审核验证流程
   }
 }
 
 together {
-  class TeamProjectACL DDD_ACL {
+  class TeamProjectACL ACL {
     + 团队与项目关联
   }
 
-  class TeamUserACL DDD_ACL {
+  class TeamUserACL ACL {
     + 团队成员管理
   }
 }
 
-class ContentUserACL DDD_ACL {
+class ContentUserACL ACL {
     + validateAuthorAccess()
     + getAuthorInfo()
 }

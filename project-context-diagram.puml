@@ -27,7 +27,7 @@ skinparam packageTitleAlignment center
 !define ValueObject <<(V,#DDA0DD) ValueObject>>
 !define DomainService <<(S,#FFA07A) DomainService>>
 !define DomainEvent <<(D,#FFD700) DomainEvent>>
-!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+!define ACL <<(L,#FFFF99) AntiCorruptionLayer>>
 
 package "项目管理上下文 (Project Management)" {
     class Project AggregateRoot {
