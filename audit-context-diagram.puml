@@ -1,0 +1,253 @@
+@startuml audit-context-diagram
+' ========================
+' 审核治理上下文领域模型
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+!pragma layout smetana
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+hide circle
+skinparam packageTitleAlignment center
+
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DomainEvent <<(D,#FFD700) DomainEvent>>
+!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+
+package "审核治理上下文 (Audit Governance)" {
+    class AuditRecord Entity {
+      - recordId: String
+      - targetId: String
+      - targetType: AuditTarget
+      - creationDate: DateTime
+      - lastUpdateDate: DateTime
+      - finalResult: AuditResult
+      - comment: String
+      - approvalChain: List<ApprovalStep>
+      + addComment(comment: String, auditor: UserId)
+      + approve(auditor: UserId)
+      + reject(auditor: UserId, reason: String)
+      + assignNextAuditor(auditor: UserId)
+    }
+
+    class AuditPolicy AggregateRoot {
+      - policyId: String
+      - name: String
+      - description: String
+      - targetType: AuditTarget
+      - requiredApprovals: Int
+      - isActive: boolean
+      - workflow: AuditWorkflow
+      + executeAudit(targetId: String): AuditRecord
+      + activatePolicy()
+      + deactivatePolicy()
+      + updateWorkflow(workflow: AuditWorkflow)
+    }
+
+    class ApprovalStep ValueObject {
+        - stepOrder: Int
+        - approvalRole: ServiceGroupRoleType
+        - auditor: UserId
+        - auditResult: AuditResult
+        - auditDate: DateTime
+        - comment: String
+    }
+
+    enum AuditResult {
+        APPROVED
+        REJECTED
+        PENDING
+    }
+
+    enum AuditTarget {
+        USER_QUALIFICATION
+        PROJECT
+        SERVICE_MEMBER
+    }
+
+    class AuditWorkflow Entity {
+      - workflowId: String
+      - steps: List<AuditWorkflowStep>
+      - questionnaire: AutomatedQuestionnaire
+      + addStep(role: ServiceGroupRoleType, order: Int)
+      + removeStep(order: Int)
+      + getNextApprover(currentStep: Int): ServiceGroupRoleType
+    }
+
+    class AuditWorkflowStep ValueObject {
+      - order: Int
+      - approverRole: ServiceGroupRoleType
+      - isAutomatic: Boolean
+    }
+
+    class AutomatedQuestionnaire Entity {
+      - questionnaireId: String
+      - targetType: AuditTarget
+      - questions: List<Question>
+      - passingScore: Int
+      + evaluate(answers: Map<String, String>): Int
+    }
+
+    class Question ValueObject {
+      - questionId: String
+      - content: String
+      - weight: Int
+      - expectedAnswer: String
+      + validate(answer: String): Boolean
+    }
+    
+    class AuditService DomainService {
+        + createAuditRecord(targetId, targetType)
+        + submitQualificationProof(userId, qualificationId, proofDocuments)
+        + verifyProjectCompliance(projectId)
+        + reviewServiceMemberApplication(applicationId)
+        + processAuditResult(recordId, result)
+    }
+    
+    class AuditLogService DomainService {
+        + logAuditAction(recordId, action, actorId)
+        + generateAuditReport(filters)
+        + retrieveAuditHistory(targetId)
+        + cleanupOldLogs(days)
+    }
+    
+    ' Domain Events
+    class AuditRecordCreated DomainEvent {
+        + recordId: String
+        + targetId: String
+        + targetType: AuditTarget
+        + timestamp: DateTime
+    }
+    
+    class AuditStepCompleted DomainEvent {
+        + recordId: String
+        + stepOrder: Int
+        + result: AuditResult
+        + auditorId: String
+        + timestamp: DateTime
+    }
+    
+    class AuditCompleted DomainEvent {
+        + recordId: String
+        + targetId: String
+        + finalResult: AuditResult
+        + timestamp: DateTime
+    }
+
+    ' ----- Relationships -----
+    AuditPolicy "1" *-- "1" AuditWorkflow : defines >
+    AuditPolicy "1" --> "0..*" AuditRecord : creates >
+    AuditWorkflow "1" *-- "0..*" AuditWorkflowStep : contains >
+    AuditWorkflow "1" --> "0..1" AutomatedQuestionnaire : may include >
+    AutomatedQuestionnaire "1" *-- "1..*" Question : consists of >
+    AuditRecord "1" *-- "1..*" ApprovalStep : tracks >
+    
+    AuditService ..> AuditPolicy : uses >
+    AuditService ..> AuditRecord : manages >
+    AuditLogService ..> AuditRecord : logs >
+    
+    AuditRecord ..> AuditRecordCreated : publishes >
+    AuditRecord ..> AuditStepCompleted : publishes >
+    AuditRecord ..> AuditCompleted : publishes >
+}
+
+' 跨上下文关系与反腐层
+package "用户管理上下文 (User Management)" as UM #LightGray {
+}
+
+package "项目管理上下文 (Project Management)" as PM #LightGray {
+}
+
+package "团队协作上下文 (Team Collaboration)" as TC #LightGray {
+}
+
+package "内容管理上下文 (Content Management)" as CM #LightGray {
+}
+
+' 用户与审核的反腐层
+class UserAuditACL ACL {
+    + 用户资质审核
+    + 用户身份验证
+    + 跟踪用户操作
+}
+
+' 项目与审核的反腐层
+class ProjectAuditACL ACL {
+    + 项目审核验证流程
+    + 项目风险评估
+    + 合规性检查
+}
+
+' 团队审核反腐层
+class TeamAuditACL ACL {
+    + 团队活动审计
+    + 成员变动跟踪
+    + 存档流程管理
+}
+
+' 关系
+UM -[#blue]-> UserAuditACL : 使用 >
+UserAuditACL -[#blue]-> "审核治理上下文 (Audit Governance)" : 适配 >
+
+PM -[#blue]-> ProjectAuditACL : 使用 >
+ProjectAuditACL -[#blue]-> "审核治理上下文 (Audit Governance)" : 适配 >
+
+TC -[#blue]-> TeamAuditACL : 使用 >
+TeamAuditACL -[#blue]-> "审核治理上下文 (Audit Governance)" : 适配 >
+
+note as AuditJourneys
+  <b>核心原则</b>
+  1. 最小化数据收集: 仅采集审核必需的基础信息
+  2. 人工审核为主: 避免复杂自动化处理
+  3. 透明可追溯: 审核记录公开可查（脱敏）
+  4. 基础资质审核
+  
+  <b>用户旅程阶段: 身份验证</b>
+  1. 提交简化的资质证明
+     - 选择资质类型
+     - 上传1份证明文件
+     - 提交至服务组人工审核
+  
+  2. 基础验证界面
+     - 查看待审列表
+     - 下载证明文件
+     - 通过/拒绝
+  
+  <b>用户旅程阶段: 风险防控</b>
+  1. 项目发起人声明合规性
+     - 勾选"无违法声明"
+     - 手写签名确认
+     - 自动生成PDF存档
+  
+  2. 服务组随机抽查
+     - 随机抽取项目
+     - 基础信息核对
+     - 标记可疑项目人工复核
+  
+  <b>用户旅程阶段: 透明可溯</b>
+  1. 查看脱敏审核记录
+     - 显示审核类型+结果+日期
+     - 隐藏具体审核人信息
+  
+  2. 基础审计日志
+     - 筛选条件:日期/类型
+     - 导出CSV
+     - 自动删除超期记录
+endnote
+
+@enduml 

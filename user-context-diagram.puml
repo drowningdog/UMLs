@@ -1,0 +1,383 @@
+@startuml user-context-diagram
+' ========================
+' 用户管理上下文领域模型
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+!pragma layout smetana
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+hide circle
+skinparam packageTitleAlignment center
+
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DomainEvent <<(D,#FFD700) DomainEvent>>
+!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+
+package "用户管理上下文 (User Management)" {
+    class User AggregateRoot {
+        - userId: String
+        - email: String
+        - username: String
+        - displayName: String
+        - hashedPassword: String
+        - status: UserStatus
+        - role: UserRole
+        - registrationDate: DateTime
+        - lastLoginDate: DateTime
+        - verificationStatus: VerificationStatus
+        - profileId: String
+        + register()
+        + verify()
+        + submitForReview()
+        + updateProfile()
+        + changePassword()
+        + lockAccount()
+        + unlockAccount()
+        + restrict(reason)
+        + removeRestriction()
+        + deactivate()
+        + ban(reason)
+        + delete()
+    }
+    
+    enum UserStatus {
+        UNVERIFIED
+        PENDING_REVIEW
+        ACTIVE
+        LOCKED
+        RESTRICTED
+        INACTIVE
+        BANNED
+        DELETED
+    }
+    
+    enum UserRole {
+        USER
+        MODERATOR
+        ADMIN
+        SYSTEM
+    }
+    
+    enum VerificationStatus {
+        UNVERIFIED
+        PENDING
+        VERIFIED
+        REJECTED
+    }
+    
+    class UserProfile Entity {
+        - profileId: String
+        - userId: String
+        - bio: String
+        - avatarUrl: String
+        - location: String
+        - company: String
+        - website: String
+        - skills: List<Skill>
+        - socialLinks: List<SocialLink>
+        - lastUpdated: DateTime
+        + updateBio()
+        + updateAvatar()
+        + addSkill()
+        + removeSkill()
+        + addSocialLink()
+        + removeSocialLink()
+    }
+    
+    class Skill ValueObject {
+        - name: String
+        - category: SkillCategory
+        - level: SkillLevel
+        - yearsOfExperience: Int
+        - endorsements: Int
+    }
+    
+    class SocialLink ValueObject {
+        - platform: String
+        - url: String
+        - isVerified: Boolean
+    }
+    
+    enum SkillCategory {
+        TECHNICAL
+        DESIGN
+        MANAGEMENT
+        MARKETING
+        OPERATIONS
+    }
+    
+    enum SkillLevel {
+        BEGINNER
+        INTERMEDIATE
+        ADVANCED
+        EXPERT
+    }
+    
+    class UserActivity Entity {
+        - activityId: String
+        - userId: String
+        - type: ActivityType
+        - timestamp: DateTime
+        - metadata: Map<String, String>
+        + recordActivity()
+    }
+    
+    enum ActivityType {
+        LOGIN
+        PROJECT_CREATED
+        PROJECT_JOINED
+        CONTENT_PUBLISHED
+        MESSAGE_SENT
+        PROFILE_UPDATED
+    }
+    
+    class UserCredential Entity {
+        - credentialId: String
+        - userId: String
+        - type: CredentialType
+        - issuedAt: DateTime
+        - expiresAt: DateTime
+        - status: CredentialStatus
+        + issue()
+        + verify()
+        + revoke()
+        + renew()
+    }
+    
+    enum CredentialType {
+        EMAIL_VERIFICATION
+        PASSWORD_RESET
+        API_KEY
+        OAUTH_TOKEN
+    }
+    
+    enum CredentialStatus {
+        ACTIVE
+        EXPIRED
+        REVOKED
+        USED
+    }
+    
+    class UserMetrics ValueObject {
+        - projectsCreated: Int
+        - projectsCompleted: Int
+        - averageRating: Float
+        - activeStreak: Int
+        - contributionLevel: ContributionLevel
+        - lastUpdated: DateTime
+        + calculateReputation(): Integer
+    }
+    
+    enum ContributionLevel {
+        NEWCOMER
+        CONTRIBUTOR
+        CORE_MEMBER
+        LEADER
+    }
+    
+    class RegistrationService DomainService {
+        + registerUser(email, username, password)
+        + validateUserData(userData)
+        + sendVerificationEmail(userId)
+        + completeRegistration(verificationToken)
+    }
+    
+    class AuthenticationService DomainService {
+        + authenticateUser(identifier, password): AuthResult
+        + issueSession(userId): TokenPayload
+        + validateToken(token): Boolean
+        + revokeSession(userId, sessionId)
+        + handlePasswordRecovery(email)
+    }
+    
+    class ProfileManagementService DomainService {
+        + updateUserProfile(userId, profileData)
+        + validateSkills(skills): Boolean
+        + calculateUserReputation(userId): Integer
+        + verifyUserIdentity(userId, proofDocument)
+    }
+    
+    ' Domain Events
+    class UserRegistered DomainEvent {
+        + userId: String
+        + email: String
+        + registrationDate: DateTime
+    }
+    
+    class UserVerified DomainEvent {
+        + userId: String
+        + verificationMethod: String
+        + timestamp: DateTime
+    }
+    
+    class UserStatusChanged DomainEvent {
+        + userId: String
+        + oldStatus: UserStatus
+        + newStatus: UserStatus
+        + reason: String
+        + timestamp: DateTime
+    }
+    
+    class ProfileUpdated DomainEvent {
+        + userId: String
+        + fieldsChanged: List<String>
+        + timestamp: DateTime
+    }
+    
+    class CredentialIssued DomainEvent {
+        + userId: String
+        + credentialType: CredentialType
+        + expiresAt: DateTime
+        + timestamp: DateTime
+    }
+    
+    ' Relationships
+    User "1" *-- "1" UserProfile : has >
+    User "1" *-- "0..*" UserActivity : records >
+    User "1" *-- "0..*" UserCredential : possesses >
+    User "1" *-- "1" UserMetrics : measures >
+    UserProfile "1" *-- "0..*" Skill : contains >
+    UserProfile "1" *-- "0..*" SocialLink : links to >
+    
+    RegistrationService ..> User : registers >
+    AuthenticationService ..> User : authenticates >
+    ProfileManagementService ..> UserProfile : manages >
+    
+    User ..> UserRegistered : publishes >
+    User ..> UserVerified : publishes >
+    User ..> UserStatusChanged : publishes >
+    UserProfile ..> ProfileUpdated : publishes >
+    UserCredential ..> CredentialIssued : publishes >
+}
+
+note as UserJourneys
+  <b>用户旅程阶段: 身份注册</b>
+  1. 用户注册
+     - 填写基本信息
+     - 设置密码
+     - 验证邮箱
+     - 完成注册
+     - 转入引导流程
+  
+  <b>用户旅程阶段: 个人画像</b>
+  1. 完善基础资料
+     - 上传头像
+     - 填写简介
+     - 添加技能标签
+     - 设置所在地区/公司
+  
+  2. 建立身份验证
+     - 关联社交账号
+     - 验证专业技能
+     - 提交身份证明
+     - 获取认证徽章
+  
+  <b>用户旅程阶段: 账户管理</b>
+  1. 安全设置
+     - 修改密码
+     - 设置二次验证
+     - 查看登录历史
+     - 管理授权令牌
+  
+  2. 隐私管理
+     - 设置资料可见性
+     - 管理数据共享
+     - 导出个人数据
+endnote
+
+' 跨上下文关系与反腐层
+package "审核治理上下文 (Audit Governance)" as AG #LightGray {
+}
+
+package "团队协作上下文 (Team Collaboration)" as TC #LightGray {
+}
+
+package "内容管理上下文 (Content Management)" as CM #LightGray {
+}
+
+' 用户与审核的反腐层
+class UserAuditACL ACL {
+    + 用户资质审核
+    + 用户身份验证
+    + 跟踪用户操作
+}
+
+' 团队与用户的反腐层
+class TeamUserACL ACL {
+    + 团队成员管理
+    + 用户权限验证
+    + 团队成员活跃度评估
+}
+
+' 内容与用户的反腐层
+class ContentUserACL ACL {
+    + 内容作者关联
+    + 用户贡献跟踪
+}
+
+' 关系
+"用户管理上下文 (User Management)" -[#blue]-> UserAuditACL : 使用 >
+UserAuditACL -[#blue]-> AG : 适配 >
+
+TC -[#green]-> TeamUserACL : 使用 >
+TeamUserACL -[#green]-> "用户管理上下文 (User Management)" : 适配 >
+
+CM -[#orange]-> ContentUserACL : 使用 >
+ContentUserACL -[#orange]-> "用户管理上下文 (User Management)" : 适配 >
+
+note as UserStateNote
+  <b>用户账号状态流转:</b>
+  
+  1. 未验证 (Unverified)
+     - 注册后的初始状态
+     - 需邮箱或手机验证
+     - 可能需提交审核材料
+     - 资质审核未通过会返回此状态
+  
+  2. 待审核 (Pending Review)
+     - 身份或资质需人工审核
+     - 部分功能受限
+  
+  3. 活跃 (Active)
+     - 正常使用状态
+     - 所有功能开放
+  
+  4. 锁定 (Locked)
+     - 安全风险导致的临时锁定
+     - 需验证身份解锁
+  
+  5. 受限 (Restricted)
+     - 轻微违规或异常行为
+     - 部分功能暂时限制
+     - 可通过申诉恢复
+  
+  6. 失活 (Inactive)
+     - 长期未登录自动转为
+     - 登录后可恢复活跃
+  
+  7. 封禁 (Banned)
+     - 严重违规行为
+     - 无法使用大部分功能
+  
+  8. 注销 (Deleted)
+     - 用户申请注销或长期未活跃
+     - 数据匿名化处理
+endnote
+
+@enduml 

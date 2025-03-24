@@ -1,0 +1,273 @@
+@startuml team-context-diagram
+' ========================
+' 团队协作上下文领域模型
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+!pragma layout smetana
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+hide circle
+skinparam packageTitleAlignment center
+
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DomainEvent <<(D,#FFD700) DomainEvent>>
+!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+
+package "团队协作上下文 (Team Collaboration)" {
+    class Team AggregateRoot {
+        - teamId: String
+        - name: String 
+        - projectId: String
+        - ownerId: String
+        - status: TeamStatus
+        - members: List<TeamMember>
+        - creationDate: DateTime
+        - lastActivityDate: DateTime
+        + create()
+        + addMember(userId, role)
+        + removeMember(userId)
+        + changeOwner(newOwnerId)
+        + freeze()
+        + unfreeze()
+        + disband()
+    }
+    
+    enum TeamStatus {
+        FORMING
+        ACTIVE
+        FROZEN
+        DISBANDED
+    }
+    
+    class TeamMember Entity {
+        - memberId: String
+        - userId: String
+        - teamId: String
+        - role: TeamRole
+        - joinDate: DateTime
+        - lastActive: DateTime
+        - activityScore: Float
+        + updateActivity()
+        + assignRole(role)
+        + recordCommit()
+        + recordMessage()
+        + calculateActivityScore()
+    }
+
+    enum TeamRole {
+        OWNER
+        TECH_LEAD
+        DEVELOPER
+        DESIGNER
+        PRODUCT_MANAGER
+        MARKETING
+        OPERATIONS
+    }
+    
+    class TeamApplication Entity {
+        - applicationId: String
+        - userId: String
+        - teamId: String
+        - statement: String
+        - submissionDate: DateTime
+        - status: ApplicationStatus
+        + submit()
+        + approve()
+        + reject(reason)
+    }
+    
+    enum ApplicationStatus {
+        PENDING
+        APPROVED
+        REJECTED
+    }
+    
+    class TeamInvitation Entity {
+        - invitationId: String
+        - teamId: String
+        - inviterId: String
+        - inviteeId: String
+        - role: TeamRole
+        - expirationDate: DateTime
+        - status: InvitationStatus
+        + send()
+        + accept()
+        + decline()
+        + cancel()
+    }
+    
+    enum InvitationStatus {
+        PENDING
+        ACCEPTED
+        DECLINED
+        EXPIRED
+        CANCELED
+    }
+    
+    class Repository Entity {
+        - repositoryId: String
+        - url: String
+        - type: RepositoryType
+        - teamId: String
+        - createdDate: DateTime
+        + initialize()
+        + archive()
+    }
+    
+    enum RepositoryType {
+        GITHUB
+        GITLAB
+        BITBUCKET
+    }
+    
+    class TeamFormationService DomainService {
+        + createTeamFromProject(projectId, ownerId)
+        + initializeRepository(teamId, repositoryType)
+        + publishRecruitmentAnnouncement(teamId)
+    }
+    
+    class MembershipService DomainService {
+        + processApplication(applicationId)
+        + sendInvitation(teamId, inviterId, inviteeId, role)
+        + evaluateMemberActivity(teamId)
+        + processLeaveRequest(memberId, reason)
+    }
+    
+    ' Domain Events
+    class TeamCreated DomainEvent {
+        + teamId: String
+        + projectId: String
+        + ownerId: String
+        + timestamp: DateTime
+    }
+    
+    class MemberAdded DomainEvent {
+        + teamId: String
+        + userId: String
+        + role: TeamRole
+        + joinDate: DateTime
+    }
+    
+    class MemberRemoved DomainEvent {
+        + teamId: String
+        + userId: String
+        + reason: String
+        + removalDate: DateTime
+    }
+    
+    class TeamStatusChanged DomainEvent {
+        + teamId: String
+        + oldStatus: TeamStatus
+        + newStatus: TeamStatus
+        + reason: String
+        + timestamp: DateTime
+    }
+    
+    ' Relationships
+    Team "1" *-- "0..*" TeamMember : has >
+    Team "1" *-- "0..1" Repository : owns >
+    Team "1" -- "0..*" TeamApplication : receives >
+    Team "1" -- "0..*" TeamInvitation : sends >
+    
+    TeamFormationService ..> Team : creates >
+    MembershipService ..> TeamMember : manages >
+    MembershipService ..> TeamApplication : processes >
+    MembershipService ..> TeamInvitation : handles >
+    
+    Team ..> TeamCreated : publishes >
+    Team ..> TeamStatusChanged : publishes >
+    TeamMember ..> MemberAdded : publishes >
+    TeamMember ..> MemberRemoved : publishes >
+}
+
+note as TeamJourneys
+  <b>用户旅程阶段: 项目启动/团队动态组建</b>
+  1. 生成项目团队
+     - 创建团队仓库
+     - 初始化成员列表
+     - 设置发起人为Owner
+     - 向社区推送团队招募公告
+  
+  <b>用户旅程阶段: 成员加入</b>
+  1. 申请加入团队
+     - 提交申请陈述
+     - 现有成员投票
+     - 团队Owner裁决
+  
+  2. 邀请资深专家
+     - 搜索用户技能标签
+     - 发送邀请链接
+     - 受邀者确认
+     - 自动分配默认角色
+  
+  <b>用户旅程阶段: 人员流动/成员退出</b>
+  1. 主动退出团队
+     - 填写退出原因
+     - 触发所有权检查
+     - 指定接任者(关键角色)
+     - 移除权限
+  
+  2. 移除不活跃成员
+     - 查看活跃度报告
+     - 发送整改通知
+     - 执行强制移除
+endnote
+
+' 跨上下文关系与反腐层
+package "项目管理上下文 (Project Management)" as PM #LightGray {
+}
+
+package "用户管理上下文 (User Management)" as UM #LightGray {
+}
+
+package "审核治理上下文 (Audit Governance)" as AG #LightGray {
+}
+
+' 团队与项目的反腐层
+class TeamProjectACL ACL {
+    + 团队与项目关联
+    + 项目里程碑协同
+    + 资源分配
+}
+
+' 团队与用户的反腐层
+class TeamUserACL ACL {
+    + 团队成员管理
+    + 用户权限验证
+    + 团队成员活跃度评估
+}
+
+' 团队审核反腐层
+class TeamAuditACL ACL {
+    + 团队活动审计
+    + 成员变动跟踪
+    + 存档流程管理
+}
+
+' 关系
+"团队协作上下文 (Team Collaboration)" -[#green]-> TeamProjectACL : 使用 >
+TeamProjectACL -[#green]-> PM : 适配 >
+
+"团队协作上下文 (Team Collaboration)" -[#green]-> TeamUserACL : 使用 >
+TeamUserACL -[#green]-> UM : 适配 >
+
+"团队协作上下文 (Team Collaboration)" -[#blue]-> TeamAuditACL : 使用 >
+TeamAuditACL -[#blue]-> AG : 适配 >
+
+@enduml 

@@ -1,67 +1,197 @@
-@startuml
+@startuml main-class-diagram
 ' ========================
-' +-----------------+---------------------------------------------------------------+
-' | 限界上下文	    | 核心职责                                                       |
-' +-----------------+---------------------------------------------------------------+
-' | 人员管理上下文	| 用户注册、资质审核、角色分配（社区人员/服务组成员）                   |
-' +-----------------+---------------------------------------------------------------+
-' | 项目管理上下文	| 项目发布（Freelance/外包/内生/Startup）、项目审核、项目生命周期管理   |
-' +-----------------+---------------------------------------------------------------+
-' | 团队协作上下文	| 团队动态组建、成员加入/退出、与项目的绑定关系                        |
-' +-----------------+---------------------------------------------------------------+
-' | 内容管理上下文	| 文档/博客的发布、SEO 优化、知识沉淀                                |
-' +-----------------+---------------------------------------------------------------+
-' | 审核治理上下文	| 跨上下文的审核逻辑（资质审核/项目审核/服务组成员审核）                 |
-' +-----------------+---------------------------------------------------------------+
+' 主图 - 限界上下文关系图
 ' ========================
-
 
 ' ========================
 ' 全局配置
 ' ========================
+scale 0.7
+!pragma layout smetana
+skinparam dpi 100
+skinparam maxMessageSize 100
 skinparam defaultFontName "PingFang SC"
 skinparam classFontSize 12
 skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam arrowColor #666666
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+skinparam packageTitleAlignment center
 hide empty members
+hide circle
 
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DDD_ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
 
 ' ========================
-' 引入子模块
+' 限界上下文定义
 ' ========================
-!include ./domains/user-context.puml
-!include ./domains/project-context.puml
-!include ./domains/audit-context.puml
-!include ./domains/team-context.puml
-!include ./domains/content-context.puml
+package "人员管理上下文 (User Management)" as UC {
+  note as UserNote
+    核心用户角色:
+    1. 新生: 无经验求职者
+    2. 专业人1: 有经验自由职业者
+    3. 专业人2: 资深专家/创业者
+    4. 服务组成员: 人工审核员
+  end note
+}
+
+package "项目管理上下文 (Project Management)" as PM {
+  note as ProjectNote
+    项目类型:
+    - Freelance项目
+    - 外包项目
+    - 内生项目
+    - Startup项目
+    
+    状态流转:
+    草稿 -> 规划/审核 -> 招募中 -> 执行中 -> 已完结/已终止
+  end note
+}
+
+package "团队协作上下文 (Team Collaboration)" as TC {
+  note as TeamNote
+    核心角色:
+    1. 团队Owner
+    2. 团队成员
+    3. 服务组协调员
+    
+    状态流转:
+    组建中 -> 活跃 -> 冻结 -> 已解散
+  end note
+}
+
+' 内容上下文定义
+package "内容管理上下文 (Content Management)" #FFF2CC {
+    class Article AggregateRoot {
+        - articleId: String
+        - title: String
+        - content: String
+        - metadata: ArticleMetadata
+        - status: ArticleStatus
+        - authorId: String
+        + create()
+        + update()
+        + publish()
+        + archive()
+    }
+    
+    enum ArticleStatus {
+        DRAFT
+        PUBLISHED
+        ARCHIVED
+    }
+    
+    class Category Entity {
+        - categoryId: String
+        - name: String
+        - parentCategoryId: String
+    }
+    
+    class ArticleMetadata ValueObject {
+        - seoTitle: String
+        - seoDescription: String 
+        - tags: List<String>
+    }
+    
+    class ContentManagementService DomainService {
+        + createArticle()
+        + updateArticle()
+        + publishArticle()
+    }
+}
+
+package "审核治理上下文 (Audit Governance)" as AG {
+  note as AuditNote
+    核心原则:
+    1. 最小化数据收集
+    2. 人工审核为主
+    3. 透明可追溯
+    4. 基础资质审核
+  end note
+}
+
+' ========================
+' 定义反腐层
+' ========================
+together {
+  class UserAuditACL DDD_ACL {
+    + 用户资质审核流程
+  }
+
+  class ProjectAuditACL DDD_ACL {
+    + 项目审核验证流程
+  }
+}
+
+together {
+  class TeamProjectACL DDD_ACL {
+    + 团队与项目关联
+  }
+
+  class TeamUserACL DDD_ACL {
+    + 团队成员管理
+  }
+}
+
+class ContentUserACL DDD_ACL {
+    + validateAuthorAccess()
+    + getAuthorInfo()
+}
 
 ' ========================
 ' 跨上下文关系
 ' ========================
-' 用户与项目关系
-User "1" --> "0..*" Project : creates >
-User "1" --> "0..*" Project : participates in >
+' 用户与审核关系
+UC -[#blue]-> UserAuditACL : uses >
+UserAuditACL -[#blue]-> AG : adapts >
 
-' 用户与内容关系
-User "1" --> "0..*" Content : authors >
+' 项目与审核关系
+PM -[#blue]-> ProjectAuditACL : uses >
+ProjectAuditACL -[#blue]-> AG : adapts >
 
-' 项目与团队关系
-Project "1" --> "1" Team : has >
+' 团队与项目关系
+TC -[#green]-> TeamProjectACL : uses >
+TeamProjectACL -[#green]-> PM : adapts >
 
-' 项目与内容关系 
-Project "1" --> "0..*" Content : documented by >
+' 团队与用户关系
+TC -[#green]-> TeamUserACL : uses >
+TeamUserACL -[#green]-> UC : adapts >
 
-' 审核与其他上下文的关系
-AuditPolicy "1" --> "0..*" User : governs >
-AuditPolicy "1" --> "0..*" Project : governs >
-AuditPolicy "1" --> "0..*" ServiceGroupMember : governs >
+' 内容与其他上下文的关系
+CM -[#orange]-> ContentUserACL : uses >
+ContentUserACL -[#orange]-> UC : adapts >
 
-' 服务组成员与项目关系
-ServiceGroupMember "1" --> "0..*" Project : approves >
+note right of AG
+  负责跨上下文的审核逻辑:
+  - 用户资质审核
+  - 项目审核
+  - 服务组成员审核
+end note
 
-' 原有的隐藏关系
-UC -[hidden]down-> "Audit Governance"
-"Project Management" -[hidden]down-> "Audit Governance"
-"Project Management" -[hidden]down-> UC
-"Team Collaboration" -[hidden]up-> "Audit Governance"
-"Content Management" -[hidden]up-> "Audit Governance"
+legend bottom
+  <b>DevTeamUp 上下文映射</b>
+  显示了5个限界上下文与它们之间的关系:
+  
+  <color:#blue>◆ 审核相关</color>
+  1. UserAuditACL - 用户资质审核流程
+  2. ProjectAuditACL - 项目审核流程
+  3. TeamAuditACL - 团队活动审计
+  
+  <color:#green>◆ 团队相关</color>
+  4. TeamProjectACL - 团队与项目关联
+  5. TeamUserACL - 团队成员管理
+  
+  <color:#orange>◆ 内容相关</color>
+  6. ContentUserACL - 内容作者关联
+endlegend
+
 @enduml

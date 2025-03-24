@@ -1,0 +1,141 @@
+@startuml content-context-diagram
+' ========================
+' 内容管理上下文领域模型
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+!pragma layout smetana
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+hide circle
+skinparam packageTitleAlignment center
+
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DomainEvent <<(D,#FFD700) DomainEvent>>
+!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+
+package "内容管理上下文 (Content Management)" {
+    class Article AggregateRoot {
+        - articleId: String
+        - title: String
+        - authorId: String
+        - content: String
+        - status: ArticleStatus
+        - metadata: ArticleMetadata
+        - categoryIds: List<String>
+        - tags: Set<String>
+        - creationDate: DateTime
+        - lastUpdateDate: DateTime
+        - publishDate: DateTime
+        + create()
+        + update(articleData)
+        + publish()
+        + unpublish()
+        + archive()
+    }
+    
+    enum ArticleStatus {
+        DRAFT
+        PUBLISHED
+        ARCHIVED
+    }
+    
+    class ArticleMetadata ValueObject {
+        - seoTitle: String
+        - seoDescription: String
+        - featuredImage: String
+        - estimatedReadTime: Int
+        + updateSeoData(seoData)
+    }
+    
+    class Category Entity {
+        - categoryId: String
+        - name: String
+        - description: String
+        - parentCategoryId: String
+        - slug: String
+        + addArticle(articleId)
+        + removeArticle(articleId)
+    }
+    
+    class ContentManagementService DomainService {
+        + createArticle(authorId, articleData)
+        + updateArticle(articleId, articleData)
+        + publishArticle(articleId)
+        + unpublishArticle(articleId)
+        + archiveArticle(articleId)
+        + categorizeArticle(articleId, categoryIds)
+    }
+    
+    ' Domain Events
+    class ArticleCreated DomainEvent {
+        + articleId: String
+        + authorId: String
+        + timestamp: DateTime
+    }
+    
+    class ArticleStatusChanged DomainEvent {
+        + articleId: String
+        + oldStatus: ArticleStatus
+        + newStatus: ArticleStatus
+        + timestamp: DateTime
+    }
+    
+    ' Relationships
+    Article "1" *-- "1" ArticleMetadata : contains >
+    Article "0..*" -- "0..*" Category : belongs to >
+    
+    ContentManagementService ..> Article : manages >
+    
+    Article ..> ArticleCreated : publishes >
+    Article ..> ArticleStatusChanged : publishes >
+
+    note as ContentJourneys
+      <b>内容管理流程</b>
+      
+      1. 内容创建与发布
+         - 管理员手动创建文章草稿
+         - 编辑内容与元数据
+         - 发布文章到站点
+      
+      2. 内容分类
+         - 添加文章到合适分类
+         - 维护简单分类结构
+         - 确保内容可被发现
+      
+      3. 基础SEO
+         - 设置SEO标题和描述
+         - 添加关键标签
+    endnote
+}
+
+' 跨上下文关系与反腐层
+package "用户管理上下文 (User Management)" as UM #LightGray {
+}
+
+' 内容与用户的反腐层
+class ContentUserACL ACL {
+    + 内容作者关联
+    + 基础用户权限检查
+}
+
+' 关系
+"内容管理上下文 (Content Management)" -[#orange]-> ContentUserACL : 使用 >
+ContentUserACL -[#orange]-> UM : 适配 >
+
+@enduml 

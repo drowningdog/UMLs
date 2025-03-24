@@ -1,0 +1,329 @@
+@startuml project-context-diagram
+' ========================
+' 项目管理上下文领域模型
+' ========================
+
+' ========================
+' 全局配置
+' ========================
+scale 0.8
+!pragma layout smetana
+skinparam dpi 100
+skinparam defaultFontName "PingFang SC"
+skinparam classFontSize 12
+skinparam packageFontSize 14
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam padding 2
+hide circle
+skinparam packageTitleAlignment center
+
+!define AggregateRoot <<(A,#ADD8E6) AggregateRoot>>
+!define Entity <<(E,#90EE90) Entity>>
+!define ValueObject <<(V,#DDA0DD) ValueObject>>
+!define DomainService <<(S,#FFA07A) DomainService>>
+!define DomainEvent <<(D,#FFD700) DomainEvent>>
+!define ACL <<(ACL,#FFFF99) AntiCorruptionLayer>>
+
+package "项目管理上下文 (Project Management)" {
+    class Project AggregateRoot {
+        - projectId: String
+        - name: String
+        - description: String
+        - initiatorId: String
+        - status: ProjectStatus
+        - startDate: DateTime
+        - targetCompletionDate: DateTime
+        - lastUpdateTime: DateTime
+        - tags: List<String>
+        - visibility: VisibilityLevel
+        + create()
+        + updateDetails()
+        + changeStatus(newStatus)
+        + assignTags(tags)
+        + changeVisibility(visibility)
+        + archive()
+    }
+    
+    enum ProjectStatus {
+        DRAFT
+        规划/审核
+        IN_PROGRESS
+        PAUSED
+        COMPLETED
+        ABORTED
+        ARCHIVED
+    }
+    
+    enum VisibilityLevel {
+        PUBLIC
+        PRIVATE
+        RESTRICTED
+    }
+    
+    class Milestone Entity {
+        - milestoneId: String
+        - projectId: String
+        - title: String
+        - description: String
+        - dueDate: DateTime
+        - completionStatus: CompletionStatus
+        - tasks: List<Task>
+        + create()
+        + updateDetails()
+        + postpone(newDate)
+        + markAsComplete()
+        + addTask(task)
+        + removeTask(taskId)
+    }
+    
+    enum CompletionStatus {
+        NOT_STARTED
+        IN_PROGRESS
+        COMPLETED
+        OVERDUE
+    }
+    
+    class Task Entity {
+        - taskId: String
+        - milestoneId: String
+        - assigneeId: String
+        - title: String
+        - description: String
+        - priority: Priority
+        - status: TaskStatus
+        - estimatedHours: Float
+        - actualHours: Float
+        - creationDate: DateTime
+        - dueDate: DateTime
+        - completionDate: DateTime
+        + create()
+        + assignTo(userId)
+        + updateEstimation(hours)
+        + updateStatus(status)
+        + recordTime(hours)
+        + setPriority(priority)
+        + markAsComplete()
+    }
+    
+    enum Priority {
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+    
+    enum TaskStatus {
+        BACKLOG
+        TODO
+        IN_PROGRESS
+        REVIEW
+        DONE
+        BLOCKED
+    }
+    
+    class ProjectResource Entity {
+        - resourceId: String
+        - projectId: String
+        - type: ResourceType
+        - url: String
+        - name: String
+        - description: String
+        - uploadDate: DateTime
+        - versionNumber: String
+        + upload()
+        + update(newUrl)
+        + archive()
+    }
+    
+    enum ResourceType {
+        DOCUMENT
+        DESIGN
+        SOURCE_CODE
+        MEDIA
+        DATASET
+    }
+    
+    class RiskRegister Entity {
+        - registerId: String
+        - projectId: String
+        - risks: List<Risk>
+        - lastUpdated: DateTime
+        + addRisk(risk)
+        + updateRisk(riskId, details)
+        + resolveRisk(riskId)
+    }
+    
+    class Risk ValueObject {
+        - riskId: String
+        - description: String
+        - probability: RiskProbability
+        - impact: RiskImpact
+        - mitigationPlan: String
+        - status: RiskStatus
+        - owner: String
+        - identificationDate: DateTime
+        + evaluate(): Integer
+    }
+    
+    enum RiskProbability {
+        LOW
+        MEDIUM
+        HIGH
+    }
+    
+    enum RiskImpact {
+        MINIMAL
+        MODERATE
+        SIGNIFICANT
+        SEVERE
+    }
+    
+    enum RiskStatus {
+        IDENTIFIED
+        ANALYZING
+        MITIGATING
+        RESOLVED
+        ACCEPTED
+    }
+    
+    class ProjectPlanningService DomainService {
+        + initializeProject(initiatorId, details)
+        + createMilestonePlan(projectId, milestones)
+        + generateResourceRequirements(projectId)
+        + assessFeasibility(projectId): FeasibilityReport
+    }
+    
+    class ProjectMonitoringService DomainService {
+        + calculateProgress(projectId): ProgressMetrics
+        + generateStatusReport(projectId): StatusReport
+        + identifyBottlenecks(projectId): List<Bottleneck>
+        + predictCompletion(projectId): DateTime
+    }
+    
+    ' Domain Events
+    class ProjectCreated DomainEvent {
+        + projectId: String
+        + initiatorId: String
+        + timestamp: DateTime
+    }
+    
+    class ProjectStatusChanged DomainEvent {
+        + projectId: String
+        + oldStatus: ProjectStatus
+        + newStatus: ProjectStatus
+        + timestamp: DateTime
+        + reason: String
+    }
+    
+    class MilestoneReached DomainEvent {
+        + projectId: String
+        + milestoneId: String
+        + completionDate: DateTime
+    }
+    
+    class TaskAssigned DomainEvent {
+        + taskId: String
+        + assigneeId: String
+        + timestamp: DateTime
+    }
+    
+    class RiskIdentified DomainEvent {
+        + projectId: String
+        + riskId: String
+        + severity: Integer
+        + timestamp: DateTime
+    }
+    
+    ' Relationships
+    Project "1" *-- "0..*" Milestone : contains >
+    Milestone "1" *-- "0..*" Task : includes >
+    Project "1" *-- "0..*" ProjectResource : has >
+    Project "1" *-- "0..1" RiskRegister : maintains >
+    RiskRegister "1" *-- "0..*" Risk : tracks >
+    
+    ProjectPlanningService ..> Project : plans >
+    ProjectMonitoringService ..> Project : monitors >
+    
+    Project ..> ProjectCreated : publishes >
+    Project ..> ProjectStatusChanged : publishes >
+    Milestone ..> MilestoneReached : publishes >
+    Task ..> TaskAssigned : publishes >
+    RiskRegister ..> RiskIdentified : publishes >
+}
+
+note as ProjectJourneys
+  <b>用户旅程阶段: 项目创建与计划</b>
+  1. 初始化项目
+     - 设置基本信息与目标
+     - 初步评估可行性
+     - 设置标签与可见性
+     - 确定时间轴与团队需求
+  
+  2. 里程碑规划
+     - 创建里程碑节点
+     - 为每个里程碑设置任务
+     - 安排资源与人员
+     - 建立风险登记表
+  
+  <b>用户旅程阶段: 项目执行与监控</b>
+  1. 任务分配与跟踪
+     - 将任务分配给团队成员
+     - 记录工时与进度
+     - 更新任务状态
+     - 解决阻塞问题
+  
+  2. 进度监控
+     - 实时查看项目状态
+     - 比对计划与实际进度
+     - 识别潜在瓶颈
+     - 预测完成时间
+     - 调整资源分配
+  
+  <b>用户旅程阶段: 项目收尾</b>
+  1. 完成与回顾
+     - 验收最终交付物
+     - 评估目标达成情况
+     - 记录经验教训
+     - 归档项目资料
+endnote
+
+' 跨上下文关系与反腐层
+package "审核治理上下文 (Audit Governance)" as AG #LightGray {
+}
+
+package "团队协作上下文 (Team Collaboration)" as TC #LightGray {
+}
+
+package "内容管理上下文 (Content Management)" as CM #LightGray {
+}
+
+package "用户管理上下文 (User Management)" as UM #LightGray {
+}
+
+' 项目与审核的反腐层
+class ProjectAuditACL ACL {
+    + 项目审核验证流程
+    + 项目风险评估
+    + 合规性检查
+}
+
+' 团队与项目的反腐层
+class TeamProjectACL ACL {
+    + 团队与项目关联
+    + 项目里程碑协同
+    + 资源分配
+}
+
+' 关系
+"项目管理上下文 (Project Management)" -[#blue]-> ProjectAuditACL : 使用 >
+ProjectAuditACL -[#blue]-> AG : 适配 >
+
+TC -[#green]-> TeamProjectACL : 使用 >
+TeamProjectACL -[#green]-> "项目管理上下文 (Project Management)" : 适配 >
+
+@enduml 
