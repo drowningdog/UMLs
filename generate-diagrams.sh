@@ -1,7 +1,7 @@
 #!/bin/bash
 # 生成所有PlantUML图表
 
-PLANTUML_JAR="../plantuml-mit-1.2025.2.jar"
+PLANTUML_JAR="./plantuml-mit-1.2025.2.jar"
 OUTPUTS_DIR="./outputs"
 
 # 确保输出目录存在
