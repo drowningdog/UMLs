@@ -25,11 +25,6 @@ skinparam packageFontSize 14
 hide empty members
 
 
-!define DDD_AGGREGATE_ROOT <<(A,#ADD8E6) AggregateRoot>>
-!define DDD_ENTITY <<(E,#90EE90) Entity>>
-!define DDD_VALUE_OBJECT <<(V,#DDA0DD) Value Object>>
-!define DDD_DOMAIN_SERVICE <<(S,#FFA07A) DomainService>>
-
 ' ========================
 ' 引入子模块
 ' ========================
