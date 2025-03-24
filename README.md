@@ -90,8 +90,13 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
    - 审核领域模型与实体关系
    - 审核流程与策略管理
 
-7. **状态图集合** (`state-diagrams.puml`)
-   - 各个上下文的状态转换图
+7. **状态图集合**
+   - ~~各个上下文的状态转换图~~ 现已拆分为单独的状态图：
+   - 用户账号状态图 (`user-state.puml`)
+   - 项目管理状态图 (`project-state.puml`)
+   - 团队生命周期状态图 (`team-state.puml`)
+   - 内容/文章状态图 (`content-state.puml`)
+   - 审核流程状态图 (`audit-state.puml`)
 
 8. **领域流程图**
    - 用户管理流程图 (`user-workflow.puml`)
@@ -120,7 +125,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - TeamUserACL：团队成员管理
 - ContentUserACL：内容作者关联
 
-![主上下文映射图](./outputs/main-class-diagram.png)
+![主上下文映射图](./outputs/class/main-class-diagram.png)
 
 ### 用户管理上下文
 
@@ -131,7 +136,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 用户状态流转：未验证 → 待审核 → 活跃 → 锁定/受限/失活 → 封禁/注销
 - 用户旅程阶段：身份注册、个人画像、账户管理
 
-![用户管理上下文](./outputs/user-context-diagram.png)
+![用户管理上下文](./outputs/class/user-context-diagram.png)
 
 ### 项目管理上下文
 
@@ -143,7 +148,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 项目可见性规则：**只有处于"执行中"状态的项目才会公开可见**，其他状态的项目仅对项目成员和管理员可见
 - 用户旅程阶段：项目创建与计划、项目执行与监控、项目收尾
 
-![项目管理上下文](./outputs/project-context-diagram.png)
+![项目管理上下文](./outputs/class/project-context-diagram.png)
 
 ### 团队协作上下文
 
@@ -154,7 +159,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 团队状态流转：组建中 → 活跃 → 冻结 → 已解散
 - 用户旅程阶段：团队动态组建、成员加入、成员退出
 
-![团队协作上下文](./outputs/team-context-diagram.png)
+![团队协作上下文](./outputs/class/team-context-diagram.png)
 
 ### 内容管理上下文
 
@@ -165,7 +170,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 内容状态流转：草稿 → 已发布 → 已归档
 - 内容管理流程：创建与发布、分类、基础SEO
 
-![内容管理上下文](./outputs/content-context-diagram.png)
+![内容管理上下文](./outputs/class/content-context-diagram.png)
 
 ### 审核治理上下文
 
@@ -176,19 +181,26 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 审核流程：创建 → 进行中 → 需要信息 → 已完成
 - 核心原则：最小化数据收集、人工审核为主、透明可追溯、基础资质审核
 
-![审核治理上下文](./outputs/audit-context-diagram.png)
+![审核治理上下文](./outputs/class/audit-context-diagram.png)
 
 ### 状态图集合
 
-状态图集合包括：
+状态图已拆分为独立的五个图表，每个图表专注于一个领域的状态转换：
 
-- 用户账号状态流转图
-- 项目管理状态流转图
-- 团队生命周期状态图
-- 内容发布状态图
-- 审核流程状态图
+- **用户账号状态流转图**：展示用户从未验证到活跃再到可能的受限、锁定或注销的完整状态流转
+  ![用户账号状态图](./outputs/state/user-state.png)
 
-![状态图集合](./outputs/state-diagrams.png)
+- **项目管理状态流转图**：展示项目从草案到执行再到完成或终止的状态流转
+  ![项目管理状态图](./outputs/state/project-state.png)
+
+- **团队生命周期状态图**：展示团队从组建中到活跃再到可能的冻结或解散的状态流转
+  ![团队生命周期状态图](./outputs/state/team-state.png)
+
+- **文章内容状态流转图**：展示内容从草稿到发布再到归档的状态流转
+  ![文章内容状态图](./outputs/state/content-state.png)
+
+- **审核流程状态流转图**：展示审核过程的各个状态和转换
+  ![审核流程状态图](./outputs/state/audit-state.png)
 
 ## 领域流程图
 
@@ -203,7 +215,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 账号状态管理（正常使用、受限、封禁等）
 - 账号注销流程
 
-![用户管理流程图](./outputs/user-workflow.png)
+![用户管理流程图](./outputs/workflow/user-workflow.png)
 
 ### 项目管理流程图
 
@@ -215,7 +227,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 项目暂停、完成与归档
 - 明确标注了项目在不同阶段的可见性规则
 
-![项目管理流程图](./outputs/project-workflow.png)
+![项目管理流程图](./outputs/workflow/project-workflow.png)
 
 ### 团队协作流程图
 
@@ -226,7 +238,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 团队协作活动
 - 团队解散或转入新项目
 
-![团队协作流程图](./outputs/team-workflow.png)
+![团队协作流程图](./outputs/workflow/team-workflow.png)
 
 ### 内容管理流程图
 
@@ -237,7 +249,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 内容审查与发布
 - 内容更新与归档
 
-![内容管理流程图](./outputs/content-workflow.png)
+![内容管理流程图](./outputs/workflow/content-workflow.png)
 
 ### 审核治理流程图
 
@@ -248,7 +260,7 @@ docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
 - 补充信息请求流程
 - 审核决定与结果通知
 
-![审核治理流程图](./outputs/audit-workflow.png)
+![审核治理流程图](./outputs/workflow/audit-workflow.png)
 
 ## 自定义图表
 
